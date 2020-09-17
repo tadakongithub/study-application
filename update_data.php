@@ -1,5 +1,5 @@
 <?php
-include 'db.php';
+require 'db.php';
 
 if (isset($_POST['edit_id'])){
 
@@ -8,7 +8,7 @@ if (isset($_POST['edit_id'])){
     $minute = $_POST['minute'];
 
     $new_goal = strval($hour * 3600 + $minute * 60);
-}
 
-$update = $db->query("UPDATE subject SET goal = $new_goal WHERE id = $edit_id");
+    $update = $db->query("UPDATE subject SET goal = $new_goal WHERE id = $edit_id");
+}
 ?>

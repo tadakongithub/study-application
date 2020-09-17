@@ -1,7 +1,12 @@
 <?php
-require 'db.php';
 
-session_start();
+require 'session.php';
+
+if (!isset($_SESSION["ID"])) {
+  header("Location: login.php");
+}
+
+require 'db.php';
 
 $q = $db->prepare('SELECT * from subject WHERE user_id = ?');
 $q->bindParam(1, $_SESSION['ID'], PDO::PARAM_INT);

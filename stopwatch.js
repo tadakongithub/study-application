@@ -1,7 +1,7 @@
 //Define time vars to hold time values
-var seconds = 0;
-var minutes = 0;
-var hours = 0;
+let seconds = 0;
+let minutes = 0;
+let hours = 0;
 
 let displaySeconds;
 let displayMinutes;
@@ -11,7 +11,6 @@ let interval;
 
 let status = "stopped";
 
-var hidden;
 
 //Stopwatch function (logic to determine when to increment value and tc)
 function stopWatch(){
@@ -66,17 +65,22 @@ if(status == "stopped"){
 }
 }
 
+document.getElementById('startStop').addEventListener('click', (e) => {
+    e.preventDefault();
+    startStop();
+})
 
 
 
-
-
-
-
-function done() {
-        hidden = document.getElementById('display').innerHTML;
-        document.getElementById('hidden').value = hidden;
-}
+document.getElementById('done').addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('subject_to_show_in_modal').innerHTML = `Subject: ${document.getElementById('study_subject').value}`;
+    document.getElementById('time_to_show_in_modal').innerHTML = `Time: ${document.getElementById('display').innerHTML}`;
+    document.getElementById('hidden').value = document.getElementById('display').innerHTML;
+    document.getElementById('subject_in_modal').value = document.getElementById('study_subject').value;
+    $('.ui.modal.confirm').modal('show');
+    
+})
 
 /*
 function reset(){

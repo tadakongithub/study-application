@@ -1,6 +1,6 @@
 <?php
 
-include 'db.php';
+require 'db.php';
 
 $id = $_POST['id'];
 

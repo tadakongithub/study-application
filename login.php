@@ -1,62 +1,31 @@
 <?php
-require 'password.php';   // password_verfy()はphp 5.5.0以降の関数のため、バージョンが古くて使えない場合に使用
-// セッション開始
-session_start();
 
-$db['host'] = "localhost";  // DBサーバのURL
-$db['user'] = "root";  // ユーザー名
-$db['pass'] = "root";  // ユーザー名のパスワード
-$db['dbname'] = "study_app";  // データベース名
+require 'session.php';
 
-// エラーメッセージの初期化
+require 'db.php';
+
 $errorMessage = "";
 
-// ログインボタンが押された場合
 if (isset($_POST["login"])) {
-    // 1. ユーザIDの入力チェック
-    if (empty($_POST["userid"])) {  // emptyは値が空のとき
-        $errorMessage = 'User ID not entered';
+    if (empty($_POST["username"])) {
+        $errorMessage = 'User name not entered';
     } else if (empty($_POST["password"])) {
         $errorMessage = 'Password not entered';
     } 
-    if (!empty($_POST["userid"]) && !empty($_POST["password"])) {
-        // 入力したユーザIDを格納
-        $userid = $_POST["userid"];
-
-        // 2. ユーザIDとパスワードが入力されていたら認証する
-        $dsn = sprintf('mysql: host=%s; dbname=%s; charset=utf8', $db['host'], $db['dbname']);
-
-        // 3. エラー処理
-        try {
-            $pdo = new PDO($dsn, $db['user'], $db['pass'], array(PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION));
-
-            $stmt = $pdo->prepare('SELECT * FROM user WHERE name = ?');
-            $stmt->execute(array($userid));
-
-            $password = $_POST["password"];
-
-            if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                if (password_verify($password, $row['password'])) {
-                    session_regenerate_id(true);
-
-                    $id = $row['id'];                  
-                    $_SESSION["ID"] = $id;
-                    header("Location: index.php");  // メイン画面へ遷移
-                    exit();  // 処理終了
-                } else {
-                    // 認証失敗
-                    $errorMessage = 'Wrong password';
-                }
+    if (isset($_POST["username"]) && isset($_POST["password"])) {
+        $username = $_POST["username"];
+        $password = $_POST["password"];
+        $stmt = $db->prepare('SELECT * FROM user WHERE name = :username');
+        $stmt->execute(array(':username' => $username));
+        if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            if (password_verify($password, $row['password'])) {             
+                $_SESSION["ID"] = $row['id'];
+                header("Location: index.php");
             } else {
-                // 4. 認証成功なら、セッションIDを新規に発行する
-                // 該当データなし
-                $errorMessage = 'This User Name does not exist';
+                $errorMessage = 'Wrong password';
             }
-        } catch (PDOException $e) {
-            $errorMessage = 'Database Error';
-            //$errorMessage = $sql;
-            // $e->getMessage() でエラー内容を参照可能（デバッグ時のみ表示）
-            // echo $e->getMessage();
+        } else {
+            $errorMessage = 'This User Name does not exist';
         }
     }
 }
@@ -87,7 +56,7 @@ if (isset($_POST["login"])) {
                 <legend>LOGIN FORM</legend>
                 <div><font color="#ff0000"><?php echo htmlspecialchars($errorMessage, ENT_QUOTES); ?></font></div>
                 <div class="form-group">
-                <label for="userid">USERNAME</label><input type="text" id="userid" class="form-control" name="userid" value="<?php if (!empty($_POST["userid"])) {echo htmlspecialchars($_POST["userid"], ENT_QUOTES);} ?>">
+                <label for="username">USERNAME</label><input type="text" id="username" class="form-control" name="username" value="<?php if (!empty($_POST["username"])) {echo htmlspecialchars($_POST["username"], ENT_QUOTES);} ?>">
                 </div>
                 <br>
                 <div class="form-group">

@@ -1,60 +1,42 @@
 <?php
-require 'password.php';   // password_hash()はphp 5.5.0以降の関数のため、バージョンが古くて使えない場合に使用
-// セッション開始
-session_start();
 
-$db['host'] = "localhost";  // DBサーバのURL
-$db['user'] = "root";  // ユーザー名
-$db['pass'] = "root";  // ユーザー名のパスワード
-$db['dbname'] = "study_app";  // データベース名
+require 'session.php';
 
-$dsn = sprintf('mysql: host=%s; dbname=%s; charset=utf8', $db['host'], $db['dbname']);
-$pdo = new PDO($dsn, $db['user'], $db['pass'], array(PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION));
+require 'db.php';
 
-// エラーメッセージ、登録完了メッセージの初期化
 $errorMessage = "";
 $signUpMessage = "";
 
-$sthandler = $pdo->prepare("SELECT * FROM user WHERE name = :name");
-            $sthandler->bindParam(':name', $_POST["username"]);
-            $sthandler->execute();
-// ログインボタンが押された場合
-if (isset($_POST["signUp"])) {
-    // 1. ユーザIDの入力チェック
-    if (empty($_POST["username"])) {  // 値が空のとき
+if (isset($_POST["sign-up"])) {
+    if (empty($_POST["username"])) {
         $errorMessage = 'Enter username';
     } else if (empty($_POST["password"])) {
         $errorMessage = 'Enter password';
     } else if (empty($_POST["password2"])) {
         $errorMessage = 'Enter password';
-    } else if($sthandler->rowCount() > 0){
+    } else if($_POST["password"] !== $_POST["password2"]) {
+        $errorMessage = 'Your first and second password didn\'t match';
+    }
+    $stmt = $db->prepare('SELECT * FROM user WHERE name = :username');
+    $stmt->execute(array(
+        ':username' => $_POST['username']
+    ));
+    $userAlreadyExist = $stmt->fetchAll();
+    $countOfSameUserName = count($userAlreadyExist);
+    if($countOfSameUserName > 0){
         $errorMessage = "This username is taken";
     }
 
-    if (!empty($_POST["username"]) && !empty($_POST["password"]) && !empty($_POST["password2"]) && $_POST["password"] === $_POST["password2"] && $sthandler->rowCount() === 0) {
-        // 入力したユーザIDとパスワードを格納
+    if (!empty($_POST["username"]) && !empty($_POST["password"]) && !empty($_POST["password2"]) && $_POST["password"] === $_POST["password2"] && $countOfSameUserName === 0) {
         $username = $_POST["username"];
-        $password = $_POST["password"];
+        $password = password_hash($_POST["password"], PASSWORD_DEFAULT);
 
-        // 2. ユーザIDとパスワードが入力されていたら認証する
-        
-
-        // 3. エラー処理
-        try {
-            
-            $stmt = $pdo->prepare("INSERT INTO user(name, password) VALUES (?, ?)");
-
-            $stmt->execute(array($username, password_hash($password, PASSWORD_DEFAULT)));  // パスワードのハッシュ化を行う（今回は文字列のみなのでbindValue(変数の内容が変わらない)を使用せず、直接excuteに渡しても問題ない）
-            $userid = $pdo->lastinsertid();  // 登録した(DB側でauto_incrementした)IDを$useridに入れる
-
-            $signUpMessage = 'You have successfully signed up! Your username is '. $username. ' . Your password is '. $password. ' .';  // ログイン時に使用するIDとパスワード
-        } catch (PDOException $e) {
-            $errorMessage = 'Database Error';
-            // $e->getMessage() でエラー内容を参照可能（デバッグ時のみ表示）
-            // echo $e->getMessage();
-        }
-    } else if($_POST["password"] != $_POST["password2"]) {
-        $errorMessage = 'Your first and second password didn\'t match';
+        $stmt = $pdo->prepare("INSERT INTO user(name, password) VALUES (:name, :password)");
+        $stmt->execute(array(
+            ':name' => $username,
+            ':password' => $password
+        ));
+        header('Location: login.php');
     }
 }
 ?>
@@ -98,7 +80,7 @@ if (isset($_POST["signUp"])) {
                 <input type="password" id="password2" class="form-control" name="password2" value="">
                 </div>
                 <br>
-                <input type="submit" id="signUp" name="signUp" value="SIGN UP">
+                <input type="submit" id="signUp" name="sign-up" value="SIGN UP">
             
         </form>
         <br>

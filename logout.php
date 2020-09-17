@@ -1,5 +1,5 @@
 <?php
-session_start();
+require 'session.php';
 
 if (isset($_SESSION["NAME"])) {
     $errorMessage = "You've been logged out";

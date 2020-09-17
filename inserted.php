@@ -1,5 +1,5 @@
 <?php
-    session_start();
+    require 'session.php';
 
     $new_subject = $_SESSION['added_subject'];
 ?>
@@ -17,3 +17,6 @@
         </div>
     </body>
 </html>
+<?php
+    unset($_SESSION['added_subject']);
+?>

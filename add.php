@@ -1,24 +1,38 @@
 <?php
-    session_start();
+    require 'session.php';
+
+    if (!isset($_SESSION["ID"])) {
+        header("Location: login.php");
+    }
 
     require('db.php');
 
-    if($_POST['new_subject']) {
-        $new_subject = $_POST['new_subject'];
-        $hour = $_POST['goal_hour'] * 3600;
-        $minute = $_POST['goal_minute'] * 60;
-        $goal_seconds = $hour + $minute;//ggoal in seconds
-        $goal = strval($goal_seconds);
+    if(isset($_POST['new_subject']) &&  isset($_POST['goal_hour']) &&  isset($_POST['goal_minute'])) {
+        $stmt = $db->prepare('SELECT * FROM subject WHERE user_id = :user_id AND subject = :subject');
+        $stmt->execute(array(
+            ':user_id' => $_SESSION['ID'],
+            ':subject' => $_POST['new_subject']
+        ));
+        $subjectsAlreadyRegistered = $stmt->fetchAll();
+        if(count($subjectsAlreadyRegistered) > 0){
+           $count = count($subjectsAlreadyRegistered);
+        } else {
+            $new_subject = $_POST['new_subject'];
+            $hour = $_POST['goal_hour'] * 3600;
+            $minute = $_POST['goal_minute'] * 60;
+            $goal_seconds = $hour + $minute;//ggoal in seconds
+            $goal = strval($goal_seconds);
 
-        $statement = $db->prepare('INSERT INTO subject SET subject=?, goal=?, user_id=?');
-        $statement->bindParam(1, $new_subject);
-        $statement->bindParam(2, $goal);
-        $statement->bindParam(3, $_SESSION['ID'], PDO::PARAM_INT);
-        $statement->execute();
+            $statement = $db->prepare('INSERT INTO subject SET subject=?, goal=?, user_id=?');
+            $statement->bindParam(1, $new_subject);
+            $statement->bindParam(2, $goal);
+            $statement->bindParam(3, $_SESSION['ID'], PDO::PARAM_INT);
+            $statement->execute();
 
-        $_SESSION['added_subject'] = $new_subject;
+            $_SESSION['added_subject'] = $new_subject;
 
-        header('Location: inserted.php');
+            header('Location: inserted.php');
+        }
     }
 ?>
 <html>
@@ -31,10 +45,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.css" integrity="sha256-QVBN0oT74UhpCtEo4Ko+k3sNo+ykJFBBtGduw13V9vw=" crossorigin="anonymous" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.js" integrity="sha256-qs5p0BFSqSvrstBxPvex+zdyrzcyGdHNeNmAirO2zc0=" crossorigin="anonymous"></script>
 </head>
-
-<?php require 'header.php'; ?>
-
 <body id="add-bd">
+    <?php require 'header.php'; ?>
 
     <form id="add_form" action="" method="post" class="ui form">
         <div class="add_form_label add_form_label_1">What's your new subject?</div>
@@ -72,10 +84,28 @@
         <input id="add_submit" type="submit" value="Add">
     </form>
 
-    <script src="add.js"></script>
+    <!-- modal to show when a user tries to register a subject that already exists-->
+    <div class="ui basic modal">
+        <div class="content">
+            <p>This subject is already registered.</p>
+        </div>
+        <div class="actions">
+            <div class="ui green ok inverted button"><i class="checkmark icon"></i>Got it</div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function(){
+            $('#goal_hour, #goal_minute').dropdown();
+            $(window).on('load', function(){
+                var count = <?php echo $count; ?>;
+                if(count > 0){
+                    $('.ui.basic.modal').modal('show');
+                }
+            });
+        });
+    </script>
+
     <script src="menu.js"></script>
-    <script>$(document).ready(function(){
-        $('#goal_hour, #goal_minute').dropdown();
-    });</script>
 </body>
 </html>
